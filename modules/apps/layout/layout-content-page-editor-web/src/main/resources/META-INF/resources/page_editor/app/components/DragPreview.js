@@ -33,7 +33,7 @@ function getItemIcon(item, fragmentEntryLinks, fragments, widgets) {
 		const fragmentEntryLink =
 			fragmentEntryLinks[item.config.fragmentEntryLinkId];
 
-		if (fragmentEntryLink.portletId) {
+		if (fragmentEntryLink.portletId && widgets) {
 			const widget = getWidget(widgets, fragmentEntryLink.portletId);
 
 			return widget.instanceable ? 'square-hole-multi' : 'square-hole';
