@@ -45,12 +45,14 @@ public class SearchResultEntityModel implements EntityModel {
 				"description",
 				locale -> Field.getSortableFieldName(
 					LocalizationUtil.getLocalizedName(
-						Field.DESCRIPTION, LocaleUtil.toLanguageId(locale)))),
+						Field.DESCRIPTION, LocaleUtil.toLanguageId(locale))),
+				locale -> Field.DESCRIPTION),
 			new StringEntityField(
 				"title",
 				locale -> Field.getSortableFieldName(
 					LocalizationUtil.getLocalizedName(
-						"localized_title", LocaleUtil.toLanguageId(locale)))));
+						"localized_title", LocaleUtil.toLanguageId(locale))),
+				locale -> Field.TITLE));
 	}
 
 	@Override
