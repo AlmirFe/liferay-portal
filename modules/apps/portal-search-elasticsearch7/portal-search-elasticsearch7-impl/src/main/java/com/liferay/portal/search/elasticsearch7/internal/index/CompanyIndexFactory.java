@@ -44,19 +44,6 @@ public class CompanyIndexFactory
 	}
 
 	@Override
-	public void initializeIndex(IndicesClient indicesClient, long companyId) {
-		String indexName = _companyIndexFactoryHelper.getIndexName(companyId);
-
-		if (_companyIndexFactoryHelper.hasIndex(indicesClient, indexName)) {
-			return false;
-		}
-
-		_companyIndexFactoryHelper.createIndex(indexName, indicesClient);
-
-		return true;
-	}
-
-	@Override
 	public void deleteIndex(IndicesClient indicesClient, long companyId) {
 		String indexName = _companyIndexFactoryHelper.getIndexName(companyId);
 
@@ -81,6 +68,17 @@ public class CompanyIndexFactory
 	@Override
 	public int getPriority() {
 		return 3;
+	}
+
+	@Override
+	public void initializeIndex(IndicesClient indicesClient, long companyId) {
+		String indexName = _companyIndexFactoryHelper.getIndexName(companyId);
+
+		if (_companyIndexFactoryHelper.hasIndex(indicesClient, indexName)) {
+			return;
+		}
+
+		_companyIndexFactoryHelper.createIndex(indexName, indicesClient);
 	}
 
 	@Override
