@@ -10,15 +10,6 @@ import com.liferay.portal.kernel.util.URLUtil;
 
 import java.io.InputStream;
 
-import java.net.URL;
-
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.List;
-
-import org.osgi.framework.Bundle;
-import org.osgi.framework.BundleContext;
-
 /**
  * @author Michael C. Han
  */
