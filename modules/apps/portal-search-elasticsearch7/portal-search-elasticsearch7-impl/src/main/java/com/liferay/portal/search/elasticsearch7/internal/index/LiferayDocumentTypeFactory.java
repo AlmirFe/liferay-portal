@@ -63,11 +63,11 @@ public class LiferayDocumentTypeFactory implements MappingsHelper {
 			LiferayTypeMappingsConstants.
 				LIFERAY_DOCUMENT_TYPE_MAPPING_DEFAULT_TEMPLATE_FILE_NAME);
 
-		putTypeMappings(defaultMappingTemplate);
+		putMappings(defaultMappingTemplate);
 	}
 
 	@Override
-	public void putTypeMappings(String source) {
+	public void putMappings(String source) {
 		PutMappingRequest putMappingRequest = new PutMappingRequest(_indexName);
 
 		putMappingRequest.source(
