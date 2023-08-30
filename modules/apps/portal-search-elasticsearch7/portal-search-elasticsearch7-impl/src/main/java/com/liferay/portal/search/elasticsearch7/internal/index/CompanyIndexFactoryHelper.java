@@ -261,6 +261,17 @@ public class CompanyIndexFactoryHelper {
 		settingsBuilder.loadFromSource(defaultIndexSettings);
 	}
 
+	private void _loadIndexConfigurationContributors(
+		SettingsBuilder settingsBuilder) {
+
+		for (IndexConfigurationContributor indexConfigurationContributor :
+				_indexConfigurationContributorServiceTrackerList) {
+
+			indexConfigurationContributor.contributeSettings(
+				settingsBuilder::put);
+		}
+	}
+
 	private void _loadIndexConfigurations(SettingsBuilder settingsBuilder) {
 		settingsBuilder.put(
 			"index.number_of_replicas",
@@ -274,17 +285,6 @@ public class CompanyIndexFactoryHelper {
 				_elasticsearchConfigurationWrapper.indexMaxResultWindow()));
 	}
 
-	private void _loadIndexConfigurationContributors(
-		SettingsBuilder settingsBuilder) {
-
-		for (IndexConfigurationContributor indexConfigurationContributor :
-				_indexConfigurationContributorServiceTrackerList) {
-
-			indexConfigurationContributor.contributeSettings(
-				settingsBuilder::put);
-		}
-	}
-
 	private void _loadTestModeIndexSettings(SettingsBuilder settingsBuilder) {
 		if (!PortalRunMode.isTestMode()) {
 			return;
@@ -296,14 +296,17 @@ public class CompanyIndexFactoryHelper {
 		settingsBuilder.put("index.translog.sync_interval", "100ms");
 	}
 
-	private void _putContributedTypeMappings(
-		LiferayDocumentTypeFactory liferayDocumentTypeFactory) {
+	private void _loadUserDefinedSettings(SettingsBuilder settingsBuilder) {
+		_loadIndexConfigurations(settingsBuilder);
 
-		for (IndexConfigurationContributor indexConfigurationContributor :
-				_indexConfigurationContributorServiceTrackerList) {
+		_loadAdditionalIndexConfigurations(settingsBuilder);
 
-			indexConfigurationContributor.contributeMappings(
-				liferayDocumentTypeFactory);
+		_loadIndexConfigurationContributors(settingsBuilder);
+
+		if (Validator.isNotNull(
+				settingsBuilder.get("index.number_of_replicas"))) {
+
+			settingsBuilder.put("index.auto_expand_replicas", false);
 		}
 	}
 
@@ -394,6 +397,17 @@ public class CompanyIndexFactoryHelper {
 			_elasticsearchConfigurationWrapper.additionalTypeMappings());
 	}
 
+	private void _putContributedTypeMappings(
+		LiferayDocumentTypeFactory liferayDocumentTypeFactory) {
+
+		for (IndexConfigurationContributor indexConfigurationContributor :
+				_indexConfigurationContributorServiceTrackerList) {
+
+			indexConfigurationContributor.contributeMappings(
+				liferayDocumentTypeFactory);
+		}
+	}
+
 	private void _setMappings(
 		CreateIndexRequest createIndexRequest,
 		LiferayDocumentTypeFactory liferayDocumentTypeFactory) {
@@ -414,17 +428,7 @@ public class CompanyIndexFactoryHelper {
 
 		_loadTestModeIndexSettings(settingsBuilder);
 
-		_loadIndexConfigurations(settingsBuilder);
-
-		_loadAdditionalIndexConfigurations(settingsBuilder);
-
-		_loadIndexConfigurationContributors(settingsBuilder);
-
-		if (Validator.isNotNull(
-			settingsBuilder.get("index.number_of_replicas"))) {
-
-			settingsBuilder.put("index.auto_expand_replicas", false);
-		}
+		_loadUserDefinedSettings(settingsBuilder);
 
 		createIndexRequest.settings(settingsBuilder.getBuilder());
 	}
@@ -451,7 +455,7 @@ public class CompanyIndexFactoryHelper {
 		SettingsBuilder settingsBuilder = new SettingsBuilder(
 			Settings.builder());
 
-		_loadIndexSettingsContributors(settingsBuilder);
+		_loadUserDefinedSettings(settingsBuilder);
 
 		UpdateSettingsRequest updateSettingsRequest = new UpdateSettingsRequest(
 			indexName);
