@@ -150,8 +150,8 @@ public class RankingIndexReindexer implements IndexReindexer {
 			JSONUtil.toStringList(jsonObject.getJSONArray("hiddenDocumentIds"))
 		).rankingDocumentId(
 			jsonObject.getString("rankingDocumentId")
-		).inactive(
-			jsonObject.getBoolean("inactive")
+		).status(
+			jsonObject.getString("status")
 		).indexName(
 			jsonObject.getString("indexName")
 		).name(
