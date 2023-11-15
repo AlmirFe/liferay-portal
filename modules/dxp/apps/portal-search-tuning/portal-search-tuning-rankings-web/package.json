@@ -1,5 +1,6 @@
 {
 	"dependencies": {
+		"@clayui/alert": "3.93.0",
 		"@clayui/button": "3.100.0",
 		"@clayui/data-provider": "3.104.0",
 		"@clayui/drop-down": "3.105.0",
