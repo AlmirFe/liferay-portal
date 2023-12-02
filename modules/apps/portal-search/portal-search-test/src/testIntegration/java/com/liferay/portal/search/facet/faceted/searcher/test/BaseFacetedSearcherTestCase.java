@@ -9,8 +9,15 @@ import com.liferay.asset.kernel.model.AssetTag;
 import com.liferay.dynamic.data.mapping.service.DDMStructureLocalService;
 import com.liferay.journal.model.JournalArticle;
 import com.liferay.journal.service.JournalArticleLocalService;
+import com.liferay.journal.test.util.search.JournalArticleBlueprint;
+import com.liferay.journal.test.util.search.JournalArticleBlueprintBuilder;
+import com.liferay.journal.test.util.search.JournalArticleContent;
 import com.liferay.journal.test.util.search.JournalArticleSearchFixture;
+<<<<<<< Updated upstream
 import com.liferay.petra.function.UnsafeFunction;
+=======
+import com.liferay.journal.test.util.search.JournalArticleTitle;
+>>>>>>> Stashed changes
 import com.liferay.petra.function.transform.TransformUtil;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.User;
@@ -21,6 +28,7 @@ import com.liferay.portal.kernel.search.facet.faceted.searcher.FacetedSearcher;
 import com.liferay.portal.kernel.search.facet.faceted.searcher.FacetedSearcherManager;
 import com.liferay.portal.kernel.test.rule.DeleteAfterTestRun;
 import com.liferay.portal.kernel.util.ListUtil;
+import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.workflow.WorkflowThreadLocal;
@@ -31,6 +39,7 @@ import com.liferay.users.admin.test.util.search.UserSearchFixture;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import org.junit.After;
@@ -76,6 +85,20 @@ public abstract class BaseFacetedSearcherTestCase {
 		}
 
 		return userSearchFixture.addUser(screenName, group, assetTagNames);
+	}
+
+	protected JournalArticle addJournalArticle(Long groupId, String title)
+		throws Exception {
+
+		JournalArticleBlueprintBuilder journalArticleBlueprintBuilder = JournalArticleBlueprintBuilder.builder();
+
+		JournalArticleTitle journalArticleTitle = new JournalArticleTitle();
+
+		journalArticleTitle.put(LocaleUtil.US, title);
+
+		JournalArticleBlueprint journalArticleBlueprint = journalArticleBlueprintBuilder.journalArticleContent(new JournalArticleContent()).journalArticleTitle(journalArticleTitle).groupId(groupId).build();
+
+		return journalArticleSearchFixture.addArticle(journalArticleBlueprint);
 	}
 
 	protected void assertAllHitsAreUsers(
@@ -154,6 +177,10 @@ public abstract class BaseFacetedSearcherTestCase {
 		throws Exception {
 
 		return userSearchFixture.toMap(user, unsafeFunction, tags);
+	}
+
+	protected Map<String, String> toMap(JournalArticle journalArticle, String... tags) {
+		return journalArticleSearchFixture.toMap(journalArticle, tags);
 	}
 
 	protected JournalArticleSearchFixture journalArticleSearchFixture;
