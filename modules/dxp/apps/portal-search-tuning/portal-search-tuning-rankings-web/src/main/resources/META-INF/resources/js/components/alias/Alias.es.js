@@ -61,8 +61,13 @@ function trimListItems(list) {
 
 class Alias extends Component {
 	static propTypes = {
+		disabled: PropTypes.bool,
 		keywords: PropTypes.arrayOf(String),
 		onChange: PropTypes.func.isRequired,
+	};
+
+	static defaultProps = {
+		disabled: false,
 	};
 
 	state = {
@@ -78,7 +83,7 @@ class Alias extends Component {
 	};
 
 	render() {
-		const {keywords} = this.props;
+		const {disabled, keywords} = this.props;
 
 		const {inputValue} = this.state;
 
@@ -101,6 +106,7 @@ class Alias extends Component {
 				<ClayInput.Group>
 					<ClayInput.GroupItem>
 						<ClayMultiSelect
+							disabled={disabled}
 							id="aliases-input"
 							items={transformListOfStringsToObjects(keywords)}
 							onChange={this._handleInputChange}
@@ -108,13 +114,15 @@ class Alias extends Component {
 							value={inputValue}
 						/>
 
-						<ClayForm.FeedbackGroup>
-							<ClayForm.Text>
-								{Liferay.Language.get(
-									'add-an-alias-instruction'
-								)}
-							</ClayForm.Text>
-						</ClayForm.FeedbackGroup>
+						{!disabled && (
+							<ClayForm.FeedbackGroup>
+								<ClayForm.Text>
+									{Liferay.Language.get(
+										'add-an-alias-instruction'
+									)}
+								</ClayForm.Text>
+							</ClayForm.FeedbackGroup>
+						)}
 					</ClayInput.GroupItem>
 				</ClayInput.Group>
 			</ClayForm.Group>

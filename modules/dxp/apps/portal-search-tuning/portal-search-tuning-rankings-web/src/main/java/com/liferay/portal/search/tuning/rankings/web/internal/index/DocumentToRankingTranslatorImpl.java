@@ -26,6 +26,18 @@ public class DocumentToRankingTranslatorImpl
 
 	@Override
 	public Ranking translate(Document document, String rankingDocumentId) {
+		if (!Validator.isBlank(document.getString("inactive"))) {
+			throw YouNeedToReindexException(); // =)
+			//OR
+			//set status based on the value of inactive?
+			//this would kind of be a backward compatible "under the hood" fix...
+		}
+
+		//OR
+		if (Validator.isBlank(document.getString(RankingFields.STATUS))) {
+			throw YouNeedToReindexException();
+		}
+
 		return builder(
 		).aliases(
 			_getAliases(document)
@@ -33,8 +45,6 @@ public class DocumentToRankingTranslatorImpl
 			document.getString(RankingFields.GROUP_EXTERNAL_REFERENCE_CODE)
 		).hiddenDocumentIds(
 			document.getStrings(RankingFields.BLOCKS)
-		).inactive(
-			document.getBoolean(RankingFields.INACTIVE)
 		).indexName(
 			document.getString("index")
 		).name(
@@ -45,6 +55,8 @@ public class DocumentToRankingTranslatorImpl
 			_getQueryString(document)
 		).rankingDocumentId(
 			rankingDocumentId
+		).status(
+			document.getString(RankingFields.STATUS)
 		).sxpBlueprintExternalReferenceCode(
 			document.getString(
 				RankingFields.SXP_BLUEPRINT_EXTERNAL_REFERENCE_CODE)
