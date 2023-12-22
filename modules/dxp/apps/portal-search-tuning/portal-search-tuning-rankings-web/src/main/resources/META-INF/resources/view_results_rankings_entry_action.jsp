@@ -9,7 +9,8 @@
 
 <%@ taglib uri="http://java.sun.com/portlet_2_0" prefix="portlet" %>
 
-<%@ taglib uri="http://liferay.com/tld/frontend" prefix="liferay-frontend" %><%@
+<%@ taglib uri="http://liferay.com/tld/clay" prefix="clay" %><%@
+taglib uri="http://liferay.com/tld/frontend" prefix="liferay-frontend" %><%@
 taglib uri="http://liferay.com/tld/theme" prefix="liferay-theme" %><%@
 taglib uri="http://liferay.com/tld/ui" prefix="liferay-ui" %>
 
@@ -50,7 +51,7 @@ RankingEntryDisplayContext rankingEntryDisplayContext = (RankingEntryDisplayCont
 			<portlet:param name="keywords" value="<%= rankingEntryDisplayContext.getKeywords() %>" />
 		</portlet:renderURL>
 
-		<liferay-ui:icon
+		<clay:icon
 			message="edit"
 			url="<%= editURL %>"
 		/>
@@ -61,7 +62,7 @@ RankingEntryDisplayContext rankingEntryDisplayContext = (RankingEntryDisplayCont
 			<portlet:param name="resultsRankingUid" value="<%= rankingEntryDisplayContext.getUid() %>" />
 		</portlet:actionURL>
 
-		<liferay-ui:icon
+		<clay:icon
 			message="<%= Objects.equals(rankingEntryDisplayContext.getStatus(), ResultRankingsConstants.STATUS_ACTIVE) ? ResultRankingsConstants.DEACTIVATE : ResultRankingsConstants.ACTIVATE %>"
 			url="<%= deactivateURL %>"
 		/>
