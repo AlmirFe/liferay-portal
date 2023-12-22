@@ -14,4 +14,10 @@ public class ResultRankingsConstants {
 
 	public static final String DEACTIVATE = "deactivate";
 
+	public static final String STATUS_ACTIVE = "active";
+
+	public static final String STATUS_INACTIVE = "inactive";
+
+	public static final String STATUS_NOT_APPLICABLE = "not-applicable";
+
 }

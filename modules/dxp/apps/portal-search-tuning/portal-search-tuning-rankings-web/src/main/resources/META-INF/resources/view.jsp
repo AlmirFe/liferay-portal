@@ -16,8 +16,10 @@ taglib uri="http://liferay.com/tld/theme" prefix="liferay-theme" %><%@
 taglib uri="http://liferay.com/tld/ui" prefix="liferay-ui" %>
 
 <%@ page import="com.liferay.portal.kernel.feature.flag.FeatureFlagManagerUtil" %><%@
+page import="com.liferay.portal.kernel.language.LanguageUtil" %><%@
 page import="com.liferay.portal.kernel.model.Group" %><%@
 page import="com.liferay.portal.kernel.service.GroupLocalServiceUtil" %><%@
+page import="com.liferay.portal.kernel.servlet.SessionErrors" %><%@
 page import="com.liferay.portal.kernel.util.Constants" %><%@
 page import="com.liferay.portal.kernel.util.HashMapBuilder" %><%@
 page import="com.liferay.portal.kernel.util.HtmlUtil" %><%@
@@ -27,14 +29,33 @@ page import="com.liferay.portal.search.tuning.rankings.web.internal.constants.Re
 page import="com.liferay.portal.search.tuning.rankings.web.internal.display.context.RankingEntryDisplayContext" %><%@
 page import="com.liferay.portal.search.tuning.rankings.web.internal.display.context.RankingPortletDisplayContext" %><%@
 page import="com.liferay.portal.search.tuning.rankings.web.internal.exception.DuplicateQueryStringException" %><%@
+page import="com.liferay.portal.search.tuning.rankings.web.internal.exception.NotApplicableStatusException" %><%@
 page import="com.liferay.search.experiences.model.SXPBlueprint" %><%@
 page import="com.liferay.search.experiences.service.SXPBlueprintLocalServiceUtil" %>
+
+<%@ page import="java.util.Objects" %>
 
 <liferay-frontend:defineObjects />
 
 <liferay-theme:defineObjects />
 
+<portlet:defineObjects />
+
 <liferay-ui:error embed="<%= false %>" exception="<%= DuplicateQueryStringException.class %>" message="active-search-queries-and-aliases-must-be-unique-across-all-rankings" />
+
+<c:if test="<%= SessionErrors.contains(renderRequest, NotApplicableStatusException.class) %>">
+	<aui:script>
+		Liferay.Util.openToast({
+			message:
+				'<liferay-ui:message key="the-selected-action-could-not-be-performed-on-the-rankings-with-not-applicable-status" />',
+			title: '<liferay-ui:message key="warning" />',
+			toastProps: {
+				autoClose: 5000,
+			},
+			type: 'warning',
+		});
+	</aui:script>
+</c:if>
 
 <%
 RankingPortletDisplayContext rankingPortletDisplayContext = (RankingPortletDisplayContext)request.getAttribute(ResultRankingsPortletKeys.RESULT_RANKINGS_DISPLAY_CONTEXT);
@@ -100,7 +121,7 @@ RankingPortletDisplayContext rankingPortletDisplayContext = (RankingPortletDispl
 				<portlet:param name="resultsRankingUid" value="<%= rankingEntryDisplayContext.getUid() %>" />
 				<portlet:param name="aliases" value="<%= rankingEntryDisplayContext.getAliases() %>" />
 				<portlet:param name="companyId" value="<%= String.valueOf(themeDisplay.getCompanyId()) %>" />
-				<portlet:param name="inactive" value="<%= String.valueOf(rankingEntryDisplayContext.getInactive()) %>" />
+				<portlet:param name="status" value="<%= rankingEntryDisplayContext.getStatus() %>" />
 				<portlet:param name="keywords" value="<%= rankingEntryDisplayContext.getKeywords() %>" />
 			</portlet:renderURL>
 
@@ -148,17 +169,17 @@ RankingPortletDisplayContext rankingPortletDisplayContext = (RankingPortletDispl
 							Group group = GroupLocalServiceUtil.fetchGroupByExternalReferenceCode(rankingEntryDisplayContext.getGroupExternalReferenceCode(), themeDisplay.getCompanyId());
 							%>
 
-							<span class="lfr-portal-tooltip" data-title='<%= HtmlUtil.escape(group.getDescriptiveName(locale)) %>'>
+							<span class="lfr-portal-tooltip" data-title='<%= Validator.isNotNull(group) ? HtmlUtil.escape(group.getDescriptiveName(locale)) : LanguageUtil.get(request, "the-site-associated-with-this-ranking-was-deleted") %>'>
 								<liferay-ui:message key="site" />
 							</span>
 						</c:when>
 						<c:when test="<%= Validator.isNotNull(rankingEntryDisplayContext.getSXPBlueprintExternalReferenceCode()) %>">
 
 							<%
-							SXPBlueprint sxpBlueprint = SXPBlueprintLocalServiceUtil.getSXPBlueprintByExternalReferenceCode(rankingEntryDisplayContext.getSXPBlueprintExternalReferenceCode(), themeDisplay.getCompanyId());
+							SXPBlueprint sxpBlueprint = SXPBlueprintLocalServiceUtil.fetchSXPBlueprintByExternalReferenceCode(rankingEntryDisplayContext.getSXPBlueprintExternalReferenceCode(), themeDisplay.getCompanyId());
 							%>
 
-							<span class="lfr-portal-tooltip" data-title='<%= HtmlUtil.escape(sxpBlueprint.getTitle(locale)) %>'>
+							<span class="lfr-portal-tooltip" data-title='<%= Validator.isNotNull(sxpBlueprint) ? HtmlUtil.escape(sxpBlueprint.getTitle(locale)) : LanguageUtil.get(request, "the-blueprint-associated-with-this-ranking-was-deleted") %>'>
 								<liferay-ui:message key="blueprint" />
 							</span>
 						</c:when>
@@ -173,11 +194,22 @@ RankingPortletDisplayContext rankingPortletDisplayContext = (RankingPortletDispl
 				cssClass="table-cell-expand-smallest table-cell-minw-150"
 				name="status"
 			>
-				<div class="label <%= rankingEntryDisplayContext.getInactive() ? "label-secondary" : "label-success" %>">
-					<span class="label-item label-item-expand">
-						<liferay-ui:message key='<%= rankingEntryDisplayContext.getInactive() ? "inactive" : "active" %>' />
-					</span>
-				</div>
+				<c:choose>
+					<c:when test="<%= Objects.equals(rankingEntryDisplayContext.getStatus(), ResultRankingsConstants.STATUS_NOT_APPLICABLE) %>">
+						<div class="label label-warning">
+							<span class="label-item label-item-expand">
+								<liferay-ui:message key="<%= rankingEntryDisplayContext.getStatus() %>" />
+							</span>
+						</div>
+					</c:when>
+					<c:otherwise>
+						<div class="label <%= Objects.equals(rankingEntryDisplayContext.getStatus(), ResultRankingsConstants.STATUS_ACTIVE) ? "label-success" : "label-secondary" %>">
+							<span class="label-item label-item-expand">
+								<liferay-ui:message key="<%= rankingEntryDisplayContext.getStatus() %>" />
+							</span>
+						</div>
+					</c:otherwise>
+				</c:choose>
 			</liferay-ui:search-container-column-text>
 
 			<liferay-ui:search-container-column-jsp
