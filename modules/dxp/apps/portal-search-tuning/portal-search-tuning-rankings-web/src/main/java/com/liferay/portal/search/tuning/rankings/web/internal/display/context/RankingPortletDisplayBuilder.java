@@ -25,6 +25,7 @@ import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.Validator;
+import com.liferay.portal.search.blueprint.SXPBlueprintTitleProvider;
 import com.liferay.portal.search.engine.SearchEngineInformation;
 import com.liferay.portal.search.engine.adapter.SearchEngineAdapter;
 import com.liferay.portal.search.hits.SearchHit;
@@ -32,6 +33,7 @@ import com.liferay.portal.search.hits.SearchHits;
 import com.liferay.portal.search.query.Queries;
 import com.liferay.portal.search.sort.Sorts;
 import com.liferay.portal.search.tuning.rankings.constants.ResultRankingsConstants;
+import com.liferay.portal.search.tuning.rankings.index.Ranking;
 import com.liferay.portal.search.tuning.rankings.index.name.RankingIndexName;
 import com.liferay.portal.search.tuning.rankings.index.name.RankingIndexNameBuilder;
 import com.liferay.portal.search.tuning.rankings.web.internal.constants.ResultRankingsPortletKeys;
@@ -60,7 +62,8 @@ public class RankingPortletDisplayBuilder {
 		Queries queries, RankingIndexNameBuilder rankingIndexNameBuilder,
 		Sorts sorts, RenderRequest renderRequest, RenderResponse renderResponse,
 		SearchEngineAdapter searchEngineAdapter,
-		SearchEngineInformation searchEngineInformation) {
+		SearchEngineInformation searchEngineInformation,
+		SXPBlueprintTitleProvider sxpBlueprintTitleProvider) {
 
 		_documentToRankingTranslator = documentToRankingTranslator;
 		_httpServletRequest = httpServletRequest;
@@ -73,6 +76,7 @@ public class RankingPortletDisplayBuilder {
 		_renderResponse = renderResponse;
 		_searchEngineAdapter = searchEngineAdapter;
 		_searchEngineInformation = searchEngineInformation;
+		_sxpBlueprintTitleProvider = sxpBlueprintTitleProvider;
 	}
 
 	public RankingPortletDisplayContext build() {
@@ -300,10 +304,15 @@ public class RankingPortletDisplayBuilder {
 	private RankingEntryDisplayContext _buildDisplayContext(
 		SearchHit searchHit) {
 
+		Ranking ranking = _documentToRankingTranslator.translate(
+			searchHit.getDocument(), searchHit.getId());
+
 		RankingEntryDisplayContextBuilder rankingEntryDisplayContextBuilder =
 			new RankingEntryDisplayContextBuilder(
-				_documentToRankingTranslator.translate(
-					searchHit.getDocument(), searchHit.getId()));
+				ranking,
+				_sxpBlueprintTitleProvider.getSXPBlueprintTitle(
+					_portal.getCompanyId(_httpServletRequest), _renderRequest,
+					ranking.getSXPBlueprintExternalReferenceCode()));
 
 		return rankingEntryDisplayContextBuilder.build();
 	}
@@ -524,5 +533,6 @@ public class RankingPortletDisplayBuilder {
 	private final SearchEngineAdapter _searchEngineAdapter;
 	private final SearchEngineInformation _searchEngineInformation;
 	private final Sorts _sorts;
+	private final SXPBlueprintTitleProvider _sxpBlueprintTitleProvider;
 
 }

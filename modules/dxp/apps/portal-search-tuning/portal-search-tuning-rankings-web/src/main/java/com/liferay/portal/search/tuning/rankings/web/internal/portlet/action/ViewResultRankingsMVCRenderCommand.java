@@ -8,6 +8,7 @@ package com.liferay.portal.search.tuning.rankings.web.internal.portlet.action;
 import com.liferay.portal.kernel.language.Language;
 import com.liferay.portal.kernel.portlet.bridges.mvc.MVCRenderCommand;
 import com.liferay.portal.kernel.util.Portal;
+import com.liferay.portal.search.blueprint.SXPBlueprintTitleProvider;
 import com.liferay.portal.search.engine.SearchEngineInformation;
 import com.liferay.portal.search.engine.adapter.SearchEngineAdapter;
 import com.liferay.portal.search.index.IndexNameBuilder;
@@ -49,7 +50,8 @@ public class ViewResultRankingsMVCRenderCommand implements MVCRenderCommand {
 				documentToRankingTranslator,
 				portal.getHttpServletRequest(renderRequest), language, portal,
 				queries, rankingIndexNameBuilder, sorts, renderRequest,
-				renderResponse, searchEngineAdapter, searchEngineInformation
+				renderResponse, searchEngineAdapter, searchEngineInformation,
+				sxpBlueprintTitleProvider
 			).build();
 
 		renderRequest.setAttribute(
@@ -88,5 +90,8 @@ public class ViewResultRankingsMVCRenderCommand implements MVCRenderCommand {
 
 	@Reference
 	protected Sorts sorts;
+
+	@Reference
+	protected SXPBlueprintTitleProvider sxpBlueprintTitleProvider;
 
 }
