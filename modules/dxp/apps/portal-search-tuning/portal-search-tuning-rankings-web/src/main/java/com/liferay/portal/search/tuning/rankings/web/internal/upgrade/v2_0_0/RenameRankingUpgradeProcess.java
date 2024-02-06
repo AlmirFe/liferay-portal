@@ -5,6 +5,8 @@
 
 package com.liferay.portal.search.tuning.rankings.web.internal.upgrade.v2_0_0;
 
+import com.liferay.petra.string.StringBundler;
+import com.liferay.portal.kernel.dao.db.DBInspector;
 import com.liferay.portal.kernel.model.ClassName;
 import com.liferay.portal.kernel.service.ClassNameLocalService;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
@@ -25,9 +27,12 @@ public class RenameRankingUpgradeProcess extends UpgradeProcess {
 
 	@Override
 	protected void doUpgrade() throws Exception {
+		DBInspector dbInspector = new DBInspector(connection);
+
 		try (PreparedStatement preparedStatement = connection.prepareStatement(
-				"update JSONStorageEntry set classNameId = ? where " +
-					"classNameId = ?")) {
+				StringBundler.concat(
+					"update ", dbInspector.normalizeName("JSONStorageEntry"),
+					" set classNameId = ? where classNameId = ?"))) {
 
 			ClassName className = _classNameLocalService.fetchClassName(
 				"com.liferay.portal.search.tuning.rankings.web.internal." +

@@ -7,6 +7,7 @@ package com.liferay.portal.search.tuning.rankings.web.internal.upgrade.v3_0_0;
 
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.dao.db.DBInspector;
 import com.liferay.portal.kernel.dao.jdbc.AutoBatchPreparedStatementUtil;
 import com.liferay.portal.kernel.service.ClassNameLocalService;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
@@ -29,9 +30,13 @@ public class RankingJSONStorageEntryUpgradeProcess extends UpgradeProcess {
 
 	@Override
 	protected void doUpgrade() throws Exception {
+		DBInspector dbInspector = new DBInspector(connection);
+
 		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
-				"select jsonStorageEntryId, valueString from " +
-					"JSONStorageEntry where classNameId = ? and key_ = ?");
+				StringBundler.concat(
+					"select jsonStorageEntryId, valueString from ",
+					dbInspector.normalizeName("JSONStorageEntry"),
+					" where classNameId = ? and key_ = ?"));
 			PreparedStatement preparedStatement2 =
 				AutoBatchPreparedStatementUtil.concurrentAutoBatch(
 					connection,
