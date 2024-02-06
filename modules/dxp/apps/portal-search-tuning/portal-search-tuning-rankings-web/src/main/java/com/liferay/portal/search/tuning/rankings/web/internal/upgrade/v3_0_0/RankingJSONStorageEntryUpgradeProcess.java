@@ -9,11 +9,14 @@ import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.db.DBInspector;
 import com.liferay.portal.kernel.dao.jdbc.AutoBatchPreparedStatementUtil;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.service.ClassNameLocalService;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.search.tuning.rankings.constants.ResultRankingsConstants;
 import com.liferay.portal.search.tuning.rankings.index.Ranking;
 
+import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -31,6 +34,17 @@ public class RankingJSONStorageEntryUpgradeProcess extends UpgradeProcess {
 	@Override
 	protected void doUpgrade() throws Exception {
 		DBInspector dbInspector = new DBInspector(connection);
+
+		DatabaseMetaData metaData = connection.getMetaData();
+
+		ResultSet tablesResultSet = metaData.getTables(
+			null, dbInspector.getSchema(), "%", new String[] {"TABLE"});
+
+		while (tablesResultSet.next()) {
+			String tableName = tablesResultSet.getString("TABLE_NAME");
+
+			_log.error(tableName);
+		}
 
 		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
 				StringBundler.concat(
@@ -85,6 +99,9 @@ public class RankingJSONStorageEntryUpgradeProcess extends UpgradeProcess {
 			preparedStatement2.executeBatch();
 		}
 	}
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		RankingJSONStorageEntryUpgradeProcess.class);
 
 	private final ClassNameLocalService _classNameLocalService;
 
