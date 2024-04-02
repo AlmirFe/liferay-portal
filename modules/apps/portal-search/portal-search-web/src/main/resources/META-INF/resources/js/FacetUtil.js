@@ -91,6 +91,26 @@ export const FacetUtil = {
 		this.selectTerms(form, selectedTerms);
 	},
 
+	clearAllSelections(search) {
+		const allForms = document.getElementsByTagName('form');
+
+		const formsWithInputFacetParameter = Array.from(allForms).filter(
+			(form) => {
+				return (
+					form.querySelector('input.facet-parameter-name') !== null
+				);
+			}
+		);
+
+		const selections = [];
+
+		formsWithInputFacetParameter.forEach((form) => {
+			search = this.manipulateSearch(form, search, selections);
+		});
+
+		document.location.search = search;
+	},
+
 	clearSelections(event) {
 		event.preventDefault();
 
@@ -109,6 +129,31 @@ export const FacetUtil = {
 		inputs.forEach((term) => {
 			Liferay.Util.toggleDisabled(term, false);
 		});
+	},
+
+	manipulateSearch(form, search, selections) {
+		const formParameterNameElement = document.querySelector(
+			'#' + form.id + ' input.facet-parameter-name'
+		);
+
+		const startParameterNameElement = document.querySelector(
+			'#' + form.id + ' input.start-parameter-name'
+		);
+
+		if (startParameterNameElement) {
+			search = this.removeStartParameter(
+				startParameterNameElement.value,
+				search
+			);
+		}
+
+		search = this.updateQueryString(
+			formParameterNameElement.value,
+			selections,
+			search
+		);
+
+		return search;
 	},
 
 	removeStartParameter(startParameterName, queryString) {
@@ -149,29 +194,8 @@ export const FacetUtil = {
 	},
 
 	selectTerms(form, selections) {
-		const formParameterNameElement = document.querySelector(
-			'#' + form.id + ' input.facet-parameter-name'
-		);
-
-		const startParameterNameElement = document.querySelector(
-			'#' + form.id + ' input.start-parameter-name'
-		);
-
 		let search = document.location.search;
-
-		if (startParameterNameElement) {
-			search = this.removeStartParameter(
-				startParameterNameElement.value,
-				search
-			);
-		}
-
-		search = this.updateQueryString(
-			formParameterNameElement.value,
-			selections,
-			search
-		);
-
+		search = this.manipulateSearch(form, search, selections);
 		document.location.search = search;
 	},
 
