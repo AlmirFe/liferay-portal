@@ -107,9 +107,7 @@ public class GroupIdQueryPreFilterContributor
 
 		TermsFilter groupIdTermsFilter = new TermsFilter(Field.GROUP_ID);
 
-		int maxTermsCount = 65536; //Could be set by a config
-
-		if (inactiveGroupIds.size() <= maxTermsCount) {
+		if (inactiveGroupIds.size() <= _MAX_TERMS_COUNT) {
 			groupIdTermsFilter.addValues(
 				ArrayUtil.toStringArray(inactiveGroupIds.toArray(new Long[0])));
 		}
@@ -118,7 +116,7 @@ public class GroupIdQueryPreFilterContributor
 				groupIdTermsFilter.addValue(
 					String.valueOf(inactiveGroupIds.get(i)));
 
-				if (((i + 1) % maxTermsCount) == 0) {
+				if (((i + 1) % _MAX_TERMS_COUNT) == 0) {
 					booleanFilter.add(
 						groupIdTermsFilter, BooleanClauseOccur.MUST_NOT);
 
@@ -150,6 +148,8 @@ public class GroupIdQueryPreFilterContributor
 			throw new SystemException(portalException);
 		}
 	}
+
+	private static final Integer _MAX_TERMS_COUNT = 65536;
 
 	@Reference
 	private GroupLocalService _groupLocalService;
