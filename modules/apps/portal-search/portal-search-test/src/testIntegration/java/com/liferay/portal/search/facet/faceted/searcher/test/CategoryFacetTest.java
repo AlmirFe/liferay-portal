@@ -12,6 +12,7 @@ import com.liferay.asset.kernel.service.AssetCategoryLocalService;
 import com.liferay.asset.kernel.service.AssetVocabularyLocalService;
 import com.liferay.journal.model.JournalArticle;
 import com.liferay.journal.test.util.search.JournalArticleBlueprint;
+import com.liferay.journal.test.util.search.JournalArticleBlueprintBuilder;
 import com.liferay.journal.test.util.search.JournalArticleContent;
 import com.liferay.journal.test.util.search.JournalArticleTitle;
 import com.liferay.petra.string.StringBundler;
@@ -80,7 +81,7 @@ public class CategoryFacetTest extends BaseFacetedSearcherTestCase {
 	public void testAggregation() throws Exception {
 		_addAssetCategoryToUserServiceContext(RandomTestUtil.randomString());
 
-		_addJournalArticle();
+		journalArticleSearchFixture.addArticle(_createJournalArticle());
 
 		SearchContext searchContext = _getSearchContext();
 
@@ -122,7 +123,7 @@ public class CategoryFacetTest extends BaseFacetedSearcherTestCase {
 	public void testSelection() throws Exception {
 		_addAssetCategoryToUserServiceContext(RandomTestUtil.randomString());
 
-		_addJournalArticle();
+		journalArticleSearchFixture.addArticle(_createJournalArticle());
 
 		SearchContext searchContext = _getSearchContext();
 
@@ -162,40 +163,34 @@ public class CategoryFacetTest extends BaseFacetedSearcherTestCase {
 		UserTestUtil.updateUser(_user, serviceContext);
 	}
 
-	private void _addJournalArticle() throws Exception {
-		journalArticleSearchFixture.addArticle(
-			new JournalArticleBlueprint() {
-				{
-					setGroupId(_group.getGroupId());
-					setJournalArticleContent(
-						new JournalArticleContent() {
-							{
-								put(
-									LocaleUtil.US,
-									RandomTestUtil.randomString());
-
-								setDefaultLocale(LocaleUtil.US);
-								setName("content");
-							}
-						});
-					setJournalArticleTitle(
-						new JournalArticleTitle() {
-							{
-								put(
-									LocaleUtil.US,
-									_assetCategory.getTitleCurrentValue());
-							}
-						});
-				}
-			});
-	}
-
 	private void _assertEntryClassNames(
 		List<String> entryClassNames, Hits hits, SearchContext searchContext) {
 
 		DocumentsAssert.assertValuesIgnoreRelevance(
 			(String)searchContext.getAttribute("queryString"), hits.getDocs(),
 			Field.ENTRY_CLASS_NAME, entryClassNames);
+	}
+
+	private JournalArticleBlueprint _createJournalArticle() {
+		return JournalArticleBlueprintBuilder.builder(
+		).groupId(
+			_group.getGroupId()
+		).journalArticleContent(
+			new JournalArticleContent() {
+				{
+					put(LocaleUtil.US, RandomTestUtil.randomString());
+
+					setDefaultLocale(LocaleUtil.US);
+					setName("content");
+				}
+			}
+		).journalArticleTitle(
+			new JournalArticleTitle() {
+				{
+					put(LocaleUtil.US, _assetCategory.getTitleCurrentValue());
+				}
+			}
+		).build();
 	}
 
 	private String _getAssetVocabularyCategoryId() {
