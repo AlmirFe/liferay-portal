@@ -10,6 +10,8 @@ import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
@@ -223,20 +225,30 @@ public class SXPBlueprintUpgradeProcess extends UpgradeProcess {
 					"PortletPreferenceValue inner join PortletPreferences on ",
 					"PortletPreferences.portletPreferencesId  = ",
 					"PortletPreferenceValue.portletPreferencesId where ",
-					"PortletPreferences.portletId like ",
-					"'%com_liferay_search_experiences_web_internal_blueprint_",
-					"options_portlet_SXPBlueprintOptionsPortlet_INSTANCE_%' ",
-					"and PortletPreferenceValue.name = 'sxpBlueprintId'"));
-			ResultSet resultSet1 = preparedStatement1.executeQuery();
+					"PortletPreferences.portletId like ?",
+					"and PortletPreferenceValue.name = ?"));
 			PreparedStatement preparedStatement2 = connection.prepareStatement(
 				"select externalReferenceCode from SXPBlueprint where " +
 					"sxpBlueprintId = ?");
 			PreparedStatement preparedStatement3 = connection.prepareStatement(
 				"update PortletPreferenceValue set name = ?, smallValue = ? " +
-					"where portletPreferencesId = ? and name = " +
-						"'sxpBlueprintId'")) {
+					"where portletPreferencesId = ? and name = ?")) {
+
+			preparedStatement1.setString(
+				1,
+				"%com_liferay_search_experiences_web_internal_blueprint_" +
+					"options_portlet_SXPBlueprintOptionsPortlet_INSTANCE_%");
+			preparedStatement1.setString(2, "sxpBlueprintId");
+
+			ResultSet resultSet1 = preparedStatement1.executeQuery();
+			int count = 0;
 
 			while (resultSet1.next()) {
+				count++;
+				_log.debug("count: " + count);
+				_log.debug(
+					"resultSet1 smallValue colum: " +
+						resultSet1.getLong("smallValue"));
 				preparedStatement2.setLong(1, resultSet1.getLong("smallValue"));
 
 				ResultSet resultSet2 = preparedStatement2.executeQuery();
@@ -245,12 +257,17 @@ public class SXPBlueprintUpgradeProcess extends UpgradeProcess {
 					return;
 				}
 
+				_log.debug(
+					"resultSet1 externalReferenceCode colum: " +
+						resultSet2.getString("externalReferenceCode"));
+
 				preparedStatement3.setString(
 					1, "sxpBlueprintExternalReferenceCode");
 				preparedStatement3.setString(
 					2, resultSet2.getString("externalReferenceCode"));
 				preparedStatement3.setLong(
 					3, resultSet1.getLong("portletPreferencesId"));
+				preparedStatement3.setString(4, "sxpBlueprintId");
 
 				preparedStatement3.addBatch();
 			}
@@ -261,5 +278,8 @@ public class SXPBlueprintUpgradeProcess extends UpgradeProcess {
 			throw new RuntimeException(sqlException);
 		}
 	}
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		SXPBlueprintUpgradeProcess.class);
 
 }
