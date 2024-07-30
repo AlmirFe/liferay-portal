@@ -17,6 +17,7 @@ import com.liferay.portal.kernel.search.SearchContext;
 import com.liferay.portal.kernel.search.SearchPermissionChecker;
 import com.liferay.portal.kernel.search.filter.BooleanFilter;
 import com.liferay.portal.kernel.search.filter.Filter;
+import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.search.internal.indexer.IndexerProvidedClausesUtil;
 import com.liferay.portal.search.internal.indexer.ModelPreFilterContributorsRegistry;
 import com.liferay.portal.search.internal.indexer.ModelSearchSettingsImpl;
@@ -55,6 +56,18 @@ public class PreFilterContributorHelperImpl
 		_addPreFilters(booleanFilter, searchContext);
 
 		BooleanFilter preFilterBooleanFilter = new BooleanFilter();
+
+		List<String> entryClassNames = ListUtil.fromMapKeys(
+			entryClassNameIndexerMap);
+
+		preFilterBooleanFilter.add(
+			searchPermissionChecker.getPermissionBooleanFilter(
+				searchContext.getCompanyId(), searchContext.getGroupIds(),
+				searchContext.getUserId(),
+				ListUtil.toList(
+					entryClassNames, this::_getParentEntryClassName),
+				null, searchContext),
+			BooleanClauseOccur.SHOULD);
 
 		for (Map.Entry<String, Indexer<?>> entry :
 				entryClassNameIndexerMap.entrySet()) {
@@ -162,20 +175,6 @@ public class PreFilterContributorHelperImpl
 		}
 	}
 
-	private void _addPermissionFilter(
-		BooleanFilter booleanFilter, String entryClassName,
-		SearchContext searchContext) {
-
-		if (searchContext.getUserId() == 0) {
-			return;
-		}
-
-		searchPermissionChecker.getPermissionBooleanFilter(
-			searchContext.getCompanyId(), searchContext.getGroupIds(),
-			searchContext.getUserId(), _getParentEntryClassName(entryClassName),
-			booleanFilter, searchContext);
-	}
-
 	private void _addPreFilters(
 		BooleanFilter booleanFilter, SearchContext searchContext) {
 
@@ -203,8 +202,6 @@ public class PreFilterContributorHelperImpl
 
 		booleanFilter.addTerm(
 			Field.ENTRY_CLASS_NAME, entryClassName, BooleanClauseOccur.MUST);
-
-		_addPermissionFilter(booleanFilter, entryClassName, searchContext);
 
 		_addIndexerProvidedPreFilters(booleanFilter, indexer, searchContext);
 
