@@ -385,9 +385,10 @@ public class SearchPermissionCheckerImpl implements SearchPermissionChecker {
 			SearchPermissionContext searchPermissionContext)
 		throws Exception {
 
-		BooleanFilter permissionBooleanFilter = _getPermissionBooleanFilter(
-			companyId, groupIds, userId, className, permissionChecker,
-			searchContext, searchPermissionContext);
+		BooleanFilter permissionBooleanFilter = _getPermissionFilter(
+			companyId, groupIds, userId, permissionChecker,
+			_getPermissionName(searchContext, className),
+			searchPermissionContext);
 
 		if (booleanFilter == null) {
 			return permissionBooleanFilter;
@@ -398,24 +399,6 @@ public class SearchPermissionCheckerImpl implements SearchPermissionChecker {
 		}
 
 		return booleanFilter;
-	}
-
-	private BooleanFilter _getPermissionBooleanFilter(
-			long companyId, long[] groupIds, long userId, String className,
-			PermissionChecker permissionChecker, SearchContext searchContext,
-			SearchPermissionContext searchPermissionContext)
-		throws Exception {
-
-		Indexer<?> indexer = _indexerRegistry.getIndexer(className);
-
-		if (!indexer.isPermissionAware()) {
-			return null;
-		}
-
-		return _getPermissionFilter(
-			companyId, groupIds, userId, permissionChecker,
-			_getPermissionName(searchContext, className),
-			searchPermissionContext);
 	}
 
 	private PermissionChecker _getPermissionChecker() {
@@ -449,6 +432,16 @@ public class SearchPermissionCheckerImpl implements SearchPermissionChecker {
 			PermissionChecker permissionChecker, String className,
 			SearchPermissionContext searchPermissionContext)
 		throws Exception {
+
+		if (searchPermissionContext == null) {
+			return null;
+		}
+
+		Indexer<?> indexer = _indexerRegistry.getIndexer(className);
+
+		if (!indexer.isPermissionAware()) {
+			return null;
+		}
 
 		List<UsersGroupIdRoles> usersGroupIdsRoles =
 			searchPermissionContext._usersGroupIdsRoles;
