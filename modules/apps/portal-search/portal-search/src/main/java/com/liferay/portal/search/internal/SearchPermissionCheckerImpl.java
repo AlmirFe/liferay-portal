@@ -139,6 +139,42 @@ public class SearchPermissionCheckerImpl implements SearchPermissionChecker {
 
 	@Override
 	public BooleanFilter getPermissionBooleanFilter(
+		long companyId, long[] groupIds, long userId, List<String> classNames,
+		BooleanFilter booleanFilter, SearchContext searchContext) {
+
+		if (booleanFilter == null) {
+			booleanFilter = new BooleanFilter();
+		}
+
+		PermissionChecker permissionChecker = _getPermissionChecker(userId);
+
+		SearchPermissionContext searchPermissionContext =
+			_getSearchPermissionContext(
+				companyId, groupIds, userId, permissionChecker, searchContext);
+
+		if (searchPermissionContext == null) {
+			return booleanFilter;
+		}
+
+		for (String className : classNames) {
+			try {
+				booleanFilter.add(
+					_getPermissionBooleanFilter(
+						companyId, groupIds, userId, className, null,
+						permissionChecker, searchContext,
+						searchPermissionContext),
+					BooleanClauseOccur.SHOULD);
+			}
+			catch (Exception exception) {
+				_log.error(exception);
+			}
+		}
+
+		return booleanFilter;
+	}
+
+	@Override
+	public BooleanFilter getPermissionBooleanFilter(
 		long companyId, long[] groupIds, long userId, String className,
 		BooleanFilter booleanFilter, SearchContext searchContext) {
 
@@ -255,127 +291,138 @@ public class SearchPermissionCheckerImpl implements SearchPermissionChecker {
 	}
 
 	private SearchPermissionContext _createSearchPermissionContext(
-			long companyId, long[] groupIds, long userId,
-			PermissionChecker permissionChecker)
-		throws Exception {
+		long companyId, long[] groupIds, long userId,
+		PermissionChecker permissionChecker) {
 
-		UserBag userBag = permissionChecker.getUserBag();
+		try {
+			UserBag userBag = permissionChecker.getUserBag();
 
-		if (userBag == null) {
-			return null;
-		}
+			if (userBag == null) {
+				return null;
+			}
 
-		Set<Role> roles = new HashSet<>();
+			Set<Role> roles = new HashSet<>();
 
-		if (permissionChecker.isSignedIn() && ArrayUtil.isNotEmpty(groupIds)) {
-			for (long groupId : groupIds) {
-				for (Role role :
-						_roleLocalService.getRoles(
-							permissionChecker.getRoleIds(userId, groupId))) {
+			if (permissionChecker.isSignedIn() &&
+				ArrayUtil.isNotEmpty(groupIds)) {
 
-					if ((role.getType() == RoleConstants.TYPE_DEPOT) ||
-						(role.getType() == RoleConstants.TYPE_REGULAR)) {
+				for (long groupId : groupIds) {
+					for (Role role :
+							_roleLocalService.getRoles(
+								permissionChecker.getRoleIds(
+									userId, groupId))) {
 
-						roles.add(role);
+						if ((role.getType() == RoleConstants.TYPE_DEPOT) ||
+							(role.getType() == RoleConstants.TYPE_REGULAR)) {
+
+							roles.add(role);
+						}
 					}
 				}
 			}
-		}
-		else {
-			roles.addAll(
-				_roleLocalService.getRoles(
-					permissionChecker.getRoleIds(userId, 0)));
-		}
-
-		int termsCount = roles.size();
-
-		int permissionTermsLimit =
-			_searchPermissionCheckerConfiguration.permissionTermsLimit();
-
-		if (termsCount > permissionTermsLimit) {
-			if (_log.isDebugEnabled()) {
-				_log.debug(
-					StringBundler.concat(
-						"Skipping presearch permission checking due to too ",
-						"many roles: ", termsCount, " > ",
-						permissionTermsLimit));
+			else {
+				roles.addAll(
+					_roleLocalService.getRoles(
+						permissionChecker.getRoleIds(userId, 0)));
 			}
 
-			return null;
-		}
+			int termsCount = roles.size();
 
-		Collection<Group> groups = userBag.getGroups();
-
-		List<UsersGroupIdRoles> usersGroupIdsRoles = new ArrayList<>(
-			groups.size());
-
-		termsCount += groups.size();
-
-		if (termsCount > permissionTermsLimit) {
-			if (_log.isDebugEnabled()) {
-				_log.debug(
-					StringBundler.concat(
-						"Skipping presearch permission checking due to too ",
-						"many roles and groups: ", termsCount, " > ",
-						permissionTermsLimit));
-			}
-
-			return null;
-		}
-
-		Role organizationUserRole = _roleLocalService.getRole(
-			companyId, RoleConstants.ORGANIZATION_USER);
-		Role siteMemberRole = _roleLocalService.getRole(
-			companyId, RoleConstants.SITE_MEMBER);
-
-		for (Group group : groups) {
-			List<Role> groupRoles = _roleLocalService.getRoles(
-				permissionChecker.getRoleIds(userId, group.getGroupId()));
-
-			roles.addAll(groupRoles);
-
-			Iterator<Role> iterator = groupRoles.iterator();
-
-			while (iterator.hasNext()) {
-				Role groupRole = iterator.next();
-
-				if ((groupRole.getType() != RoleConstants.TYPE_ORGANIZATION) &&
-					(groupRole.getType() != RoleConstants.TYPE_SITE)) {
-
-					iterator.remove();
-				}
-			}
-
-			if (group.isOrganization() &&
-				!groupRoles.contains(organizationUserRole)) {
-
-				groupRoles.add(organizationUserRole);
-			}
-
-			if (group.isSite() && !groupRoles.contains(siteMemberRole)) {
-				groupRoles.add(siteMemberRole);
-			}
-
-			_addGroup(group, groupRoles, usersGroupIdsRoles);
-
-			_addGroup(group.getStagingGroup(), groupRoles, usersGroupIdsRoles);
-
-			termsCount += groupRoles.size();
+			int permissionTermsLimit =
+				_searchPermissionCheckerConfiguration.permissionTermsLimit();
 
 			if (termsCount > permissionTermsLimit) {
 				if (_log.isDebugEnabled()) {
 					_log.debug(
 						StringBundler.concat(
 							"Skipping presearch permission checking due to ",
-							"too many roles, groups, and group roles: ",
-							termsCount, " > ", permissionTermsLimit));
+							"too many roles: ", termsCount, " > ",
+							permissionTermsLimit));
 				}
 
 				return null;
 			}
-		}
 
-		return new SearchPermissionContext(roles, usersGroupIdsRoles);
+			Collection<Group> groups = userBag.getGroups();
+
+			List<UsersGroupIdRoles> usersGroupIdsRoles = new ArrayList<>(
+				groups.size());
+
+			termsCount += groups.size();
+
+			if (termsCount > permissionTermsLimit) {
+				if (_log.isDebugEnabled()) {
+					_log.debug(
+						StringBundler.concat(
+							"Skipping presearch permission checking due to ",
+							"too many roles and groups: ", termsCount, " > ",
+							permissionTermsLimit));
+				}
+
+				return null;
+			}
+
+			Role organizationUserRole = _roleLocalService.getRole(
+				companyId, RoleConstants.ORGANIZATION_USER);
+			Role siteMemberRole = _roleLocalService.getRole(
+				companyId, RoleConstants.SITE_MEMBER);
+
+			for (Group group : groups) {
+				List<Role> groupRoles = _roleLocalService.getRoles(
+					permissionChecker.getRoleIds(userId, group.getGroupId()));
+
+				roles.addAll(groupRoles);
+
+				Iterator<Role> iterator = groupRoles.iterator();
+
+				while (iterator.hasNext()) {
+					Role groupRole = iterator.next();
+
+					if ((groupRole.getType() !=
+							RoleConstants.TYPE_ORGANIZATION) &&
+						(groupRole.getType() != RoleConstants.TYPE_SITE)) {
+
+						iterator.remove();
+					}
+				}
+
+				if (group.isOrganization() &&
+					!groupRoles.contains(organizationUserRole)) {
+
+					groupRoles.add(organizationUserRole);
+				}
+
+				if (group.isSite() && !groupRoles.contains(siteMemberRole)) {
+					groupRoles.add(siteMemberRole);
+				}
+
+				_addGroup(group, groupRoles, usersGroupIdsRoles);
+
+				_addGroup(
+					group.getStagingGroup(), groupRoles, usersGroupIdsRoles);
+
+				termsCount += groupRoles.size();
+
+				if (termsCount > permissionTermsLimit) {
+					if (_log.isDebugEnabled()) {
+						_log.debug(
+							StringBundler.concat(
+								"Skipping presearch permission checking due ",
+								"to too many roles, groups, and group roles: ",
+								termsCount, " > ", permissionTermsLimit));
+					}
+
+					return null;
+				}
+			}
+
+			return new SearchPermissionContext(roles, usersGroupIdsRoles);
+		}
+		catch (Exception exception) {
+			_log.error(exception);
+
+			return null;
+		}
 	}
 
 	private BooleanFilter _getPermissionBooleanFilter(
@@ -560,9 +607,8 @@ public class SearchPermissionCheckerImpl implements SearchPermissionChecker {
 	}
 
 	private SearchPermissionContext _getSearchPermissionContext(
-			long companyId, long[] groupIds, long userId,
-			PermissionChecker permissionChecker, SearchContext searchContext)
-		throws Exception {
+		long companyId, long[] groupIds, long userId,
+		PermissionChecker permissionChecker, SearchContext searchContext) {
 
 		Object searchPermissionContextObject = searchContext.getAttribute(
 			"searchPermissionContext");
